@@ -41,8 +41,10 @@ if __name__ == "__main__":
     if(serial_device.read(2) != b'\x01S'):
         raise RuntimeError('Error during setup')
 
+    print("TAStm32 initialized sucessfully.")
     midi = mido.MidiFile("midi.mid")
     gen = midi.play()
+    print("Starting song playback.")
     while True:
         try:
             note, vol = parse(next(gen))
@@ -51,6 +53,7 @@ if __name__ == "__main__":
                 w3, w4 = separate_words(vol)
                 msg = b''.join((STRUCT.pack(w2), STRUCT.pack(w1), STRUCT.pack(w4), STRUCT.pack(w3)))
                 serial_device.write(b"A" + bytes(msg))#This bytes might be redundant.
+                print(b'A' + bytes(msg))
         except StopIteration:
             break
             
