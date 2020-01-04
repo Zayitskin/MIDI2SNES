@@ -46,10 +46,11 @@ if __name__ == "__main__":
     while True:
         try:
             note, vol = parse(next(gen))
-            w1, w2 = separate_words(note)
-            w3, w4 = separate_words(vol)
-            msg = b''.join((STRUCT.pack(w2), STRUCT.pack(w1), STRUCT.pack(w4), STRUCT.pack(w3)))
-            serial_device.write(b"A" + bytes(msg))#This bytes might be redundant.
+            if note != None and vol != None:
+                w1, w2 = separate_words(note)
+                w3, w4 = separate_words(vol)
+                msg = b''.join((STRUCT.pack(w2), STRUCT.pack(w1), STRUCT.pack(w4), STRUCT.pack(w3)))
+                serial_device.write(b"A" + bytes(msg))#This bytes might be redundant.
         except StopIteration:
             break
             
