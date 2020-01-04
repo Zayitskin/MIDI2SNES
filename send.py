@@ -8,13 +8,16 @@ from convert import parse
 #serial_device.write(command)
 
 XOR = 0
-STRUCT = struct.Struct("<H")#Struct different from convert script to facilicate wordswapping.
+STRUCT = struct.Struct(">I")#Struct different from convert script to facilicate wordswapping.
+PERMUTATION = [16,18,20,22,0,2,4,6,48,50,52,54,32,34,36,38,17,19,21,23,1,3,5,7,49,51,53,55,33,35,37,39,24,26,28,30,8,10,12,14,56,58,60,62,40,42,44,46,25,27,29,31,9,11,13,15,57,59,61,63,41,43,45,47];
 
-def separate_words(i):
-    w1 = i & 0xFFFF
-    w2 = (i >> 16) & 0xFFFF
-    
-    return w1,w2
+def permute_bytes(b):
+    c = [0]*8;
+    for i in range(64):
+        j = PERMUTATION[i]
+        if (b[j//8] >> j%8) & 1:
+            c[i//8] |= 1 << i%8
+    return c;
 
 if __name__ == "__main__":
 
@@ -49,11 +52,8 @@ if __name__ == "__main__":
         try:
             note, vol = parse(next(gen))
             if note != None and vol != None:
-                w1, w2 = separate_words(note)
-                w3, w4 = separate_words(vol)
-                msg = b''.join((STRUCT.pack(w2), STRUCT.pack(w1), STRUCT.pack(w4), STRUCT.pack(w3)))
-                serial_device.write(b"A" + bytes(msg))#This bytes might be redundant.
-                print(b'A' + bytes(msg))
+                msg = bytes(permute_bytes(b''.join((STRUCT.pack(note), STRUCT.pack(vol)))))
+                serial_device.write(b"A" + msg)
         except StopIteration:
             break
             
