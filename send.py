@@ -11,6 +11,9 @@ LSNES = 1
 XOR = 0
 STRUCT = struct.Struct(">I")#Struct different from convert script to facilicate wordswapping.
 PERMUTATION = [16,18,20,22,0,2,4,6,48,50,52,54,32,34,36,38,17,19,21,23,1,3,5,7,49,51,53,55,33,35,37,39,24,26,28,30,8,10,12,14,56,58,60,62,40,42,44,46,25,27,29,31,9,11,13,15,57,59,61,63,41,43,45,47]
+CYCLER = 1
+CYCLE_DEPTH = 20 #Number of commnands between sample changes (not note_ons!)
+SAMPLE_MAX = 63
 
 def permute_bytes(b):
     c = [0]*8;
@@ -51,15 +54,29 @@ if __name__ == "__main__":
         f = open('input', 'w')
         print("***NOTE: You are in lsnes mode! If you want to use this with the TAStm32 replay device, please set LSNES=0 in send.py")
         time.sleep(4)
+        for x in range(150):
+            print("Writing frame "+str(framecounter)+" to input file")
+            f.write("F|................|................|................|................\n")
+            framecounter += 1
     midi = mido.MidiFile("midi.mid")
     gen = midi.play()
     print("Starting song playback.")
     framecounter = 1
+    sample = 0
+    cycler_count = 0
     while True:
         try:
-            note, vol = parse(next(gen))
+            note, vol = parse(next(gen), sample)
             if note != None and vol != None:
                 msg = bytes(permute_bytes(b''.join((STRUCT.pack(note), STRUCT.pack(vol)))))
+                if CYCLER:
+                    if cycle_count >= CYCLE_DEPTH:
+                        cycle_count = 0
+                        sample += 1
+                        if sample > SAMPLE_MAX:
+                            sample = 0
+                    else:
+                        cycle_count += 1
                 if LSNES == 0:
                     serial_device.write(b"A" + msg)
                 else:
