@@ -32,6 +32,8 @@ if __name__ == "__main__":
 
     gc.disable()
 
+    framecounter = 1
+
     if LSNES == 0:
         serial_port = serial_helper.select_serial_port()
 
@@ -61,9 +63,9 @@ if __name__ == "__main__":
     midi = mido.MidiFile("midi.mid")
     gen = midi.play()
     print("Starting song playback.")
-    framecounter = 1
+    
     sample = 0
-    cycler_count = 0
+    cycle_count = 0
     while True:
         try:
             note, vol = parse(next(gen), sample)
