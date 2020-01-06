@@ -10,18 +10,9 @@ from convert import parse
 LSNES = 1
 XOR = 0
 STRUCT = struct.Struct(">I")#Struct different from convert script to facilicate wordswapping.
-PERMUTATION = [16,18,20,22,0,2,4,6,48,50,52,54,32,34,36,38,17,19,21,23,1,3,5,7,49,51,53,55,33,35,37,39,24,26,28,30,8,10,12,14,56,58,60,62,40,42,44,46,25,27,29,31,9,11,13,15,57,59,61,63,41,43,45,47]
 CYCLER = 1
 CYCLE_DEPTH = 20 #Number of commnands between sample changes (not note_ons!)
 SAMPLE_MAX = 63
-
-def permute_bytes(b):
-    c = [0]*8;
-    for i in range(64):
-        j = PERMUTATION[i]
-        if (b[j//8] >> j%8) & 1:
-            c[i//8] |= 1 << i%8
-    return c;
 
 if __name__ == "__main__":
 
@@ -70,7 +61,9 @@ if __name__ == "__main__":
         try:
             note, vol = parse(next(gen), sample)
             if note != None and vol != None:
-                msg = bytes(permute_bytes(b''.join((STRUCT.pack(note), STRUCT.pack(vol)))))
+                # msg = permute_bytes(b''.join((STRUCT.pack(note), STRUCT.pack(vol)))) # for fast read -- DEPRECIATED
+                msg = b''.join((STRUCT.pack(note), STRUCT.pack(vol))) # for a bit slower read (currently used by asm)
+                msg = bytes([c for t in zip(msg[1::2], msg[::2]) for c in t]) # word swap due to endianness
                 if CYCLER:
                     if cycle_count >= CYCLE_DEPTH:
                         cycle_count = 0
@@ -98,6 +91,10 @@ if __name__ == "__main__":
                     f.write("\n")
                     print("Writing frame "+str(framecounter)+" to input file")
                     framecounter += 1
+                    for x in range(20): # add 20 blank frames between inputs
+                        print("Writing frame "+str(framecounter)+" to input file")
+                        f.write("F|................|................|................|................\n")
+                        framecounter += 1
         except StopIteration:
             break
     
